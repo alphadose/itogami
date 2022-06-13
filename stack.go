@@ -6,9 +6,9 @@ import (
 	"unsafe"
 )
 
-var itemPool = sync.Pool{New: func() any { return &directItem{next: nil, value: nil} }}
+var itemPool = sync.Pool{New: func() any { return unsafe.Pointer(&directItem{next: nil, value: nil}) }}
 
-// Stack implements lock-free freelist based stack.
+// Stack implements lock-free freelist based stack
 type Stack struct {
 	top unsafe.Pointer
 }
@@ -18,12 +18,12 @@ type directItem struct {
 	value unsafe.Pointer
 }
 
-// NewStack creates a new lock-free queue.
+// NewStack returns a new stack
 func NewStack() *Stack {
 	return &Stack{}
 }
 
-// Pop pops value from the top of the stack.
+// Pop pops value from the top of the stack
 func (s *Stack) Pop() (value unsafe.Pointer) {
 	var top, next unsafe.Pointer
 	for {
@@ -35,23 +35,23 @@ func (s *Stack) Pop() (value unsafe.Pointer) {
 		if atomic.CompareAndSwapPointer(&s.top, top, next) {
 			value = (*directItem)(top).value
 			(*directItem)(top).next, (*directItem)(top).value = nil, nil
-			itemPool.Put((*directItem)(top))
+			itemPool.Put(top)
 			return
 		}
 	}
 }
 
-// Push pushes a value on top of the stack.
+// Push pushes a value on top of the stack
 func (s *Stack) Push(v unsafe.Pointer) {
 	var (
 		top  unsafe.Pointer
-		item = itemPool.Get().(*directItem)
+		item = itemPool.Get().(unsafe.Pointer)
 	)
-	item.value = v
+	(*directItem)(item).value = v
 	for {
 		top = atomic.LoadPointer(&s.top)
-		item.next = top
-		if atomic.CompareAndSwapPointer(&s.top, top, unsafe.Pointer(item)) {
+		(*directItem)(item).next = top
+		if atomic.CompareAndSwapPointer(&s.top, top, item) {
 			return
 		}
 	}

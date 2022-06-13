@@ -14,17 +14,17 @@ type PoolWithFunc[T any] struct {
 	currSize uint64
 	maxSize  uint64
 	task     func(T)
-	workerQ  *List
+	workerQ  *Stack
 }
 
 func NewPoolWithFunc[T any](size uint64, task func(T)) *PoolWithFunc[T] {
-	return &PoolWithFunc[T]{workerQ: NewList(), maxSize: size, task: task}
+	return &PoolWithFunc[T]{workerQ: NewStack(), maxSize: size, task: task}
 }
 
 func (p *PoolWithFunc[T]) Invoke(value T) {
 	var s unsafe.Pointer = nil
 	for {
-		if s = p.workerQ.Dequeue(); s != nil {
+		if s = p.workerQ.Pop(); s != nil {
 			(*dataPoint[T])(s).data = value
 			safe_ready((*dataPoint[T])(s).threadPtr)
 			return
@@ -42,7 +42,7 @@ func (p *PoolWithFunc[T]) loopQ(d *dataPoint[T]) {
 	d.threadPtr = GetG()
 	for {
 		p.task(d.data)
-		p.workerQ.Enqueue(unsafe.Pointer(d))
+		p.workerQ.Push(unsafe.Pointer(d))
 		mcall(fast_park)
 	}
 }

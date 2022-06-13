@@ -13,7 +13,8 @@ type slot struct {
 type Pool struct {
 	currSize uint64
 	maxSize  uint64
-	workerQ  *Stack
+	// using a stack keeps cpu caches warm based on FILO property (in theory atleast)
+	workerQ *Stack
 }
 
 func NewPool(size uint64) *Pool {
