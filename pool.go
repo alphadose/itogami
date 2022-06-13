@@ -25,7 +25,7 @@ func NewPool(size uint64) *Pool {
 }
 
 func (p *Pool) Submit(task func()) {
-	var s unsafe.Pointer = nil
+	var s unsafe.Pointer
 	for {
 		if s = p.workerQ.Pop(); s != nil {
 			(*slot)(s).task = task

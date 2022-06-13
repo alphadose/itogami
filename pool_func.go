@@ -16,7 +16,7 @@ type PoolWithFunc[T any] struct {
 	maxSize  uint64
 	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
 	task     func(T)
-	_p3      [cacheLinePadSize - unsafe.Sizeof(func() {})]byte
+	_p3      [cacheLinePadSize - unsafe.Sizeof(func(T) {})]byte
 	workerQ  *Stack
 	_p4      [cacheLinePadSize - unsafe.Sizeof(&Stack{})]byte
 }
@@ -26,7 +26,7 @@ func NewPoolWithFunc[T any](size uint64, task func(T)) *PoolWithFunc[T] {
 }
 
 func (p *PoolWithFunc[T]) Invoke(value T) {
-	var s unsafe.Pointer = nil
+	var s unsafe.Pointer
 	for {
 		if s = p.workerQ.Pop(); s != nil {
 			(*dataPoint[T])(s).data = value

@@ -9,6 +9,7 @@ import (
 var itemPool = sync.Pool{New: func() any { return unsafe.Pointer(&directItem{next: nil, value: nil}) }}
 
 // Stack implements lock-free freelist based stack
+// Credits -> https://github.com/golang-design/lockfree
 type Stack struct {
 	top unsafe.Pointer
 }
