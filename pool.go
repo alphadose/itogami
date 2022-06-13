@@ -33,7 +33,7 @@ func (p *Pool) Submit(task func()) {
 			return
 		} else if atomic.LoadUint64(&p.currSize) < p.maxSize {
 			atomic.AddUint64(&p.currSize, 1)
-			go p.loopQ(&slot{task: task})
+			go p.loopQ(unsafe.Pointer(&slot{task: task}))
 			return
 		} else {
 			mcall(gosched_m)
@@ -41,12 +41,11 @@ func (p *Pool) Submit(task func()) {
 	}
 }
 
-func (p *Pool) loopQ(s *slot) {
-	s.threadPtr = GetG()
+func (p *Pool) loopQ(s unsafe.Pointer) {
+	(*slot)(s).threadPtr = GetG()
 	for {
-		s.task()
-		s.task = nil
-		p.workerQ.Push(unsafe.Pointer(s))
+		(*slot)(s).task()
+		p.workerQ.Push(s)
 		mcall(fast_park)
 	}
 }
