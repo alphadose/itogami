@@ -8,7 +8,10 @@ import (
 	"github.com/alphadose/itogami/constants"
 )
 
-const cacheLinePadSize = constants.CacheLinePadSize
+const (
+	cacheLinePadSize          = constants.CacheLinePadSize
+	uint64SubtractionConstant = ^uint64(0)
+)
 
 type cacheLinePadding struct{ _ [cacheLinePadSize]byte }
 

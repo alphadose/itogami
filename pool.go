@@ -31,11 +31,11 @@ func (p *Pool) Submit(task func()) {
 			(*slot)(s).task = task
 			safe_ready((*slot)(s).threadPtr)
 			return
-		} else if atomic.LoadUint64(&p.currSize) < p.maxSize {
-			atomic.AddUint64(&p.currSize, 1)
+		} else if atomic.AddUint64(&p.currSize, 1) < p.maxSize {
 			go p.loopQ(unsafe.Pointer(&slot{task: task}))
 			return
 		} else {
+			atomic.AddUint64(&p.currSize, uint64SubtractionConstant)
 			mcall(gosched_m)
 		}
 	}

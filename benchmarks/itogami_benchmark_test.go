@@ -1,7 +1,6 @@
 package test
 
 import (
-	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -11,9 +10,9 @@ import (
 )
 
 const (
-	RunTimes           = 1000000
+	RunTimes           = 1e6
 	BenchParam         = 10
-	BenchAntsSize      = 200000
+	PoolSize           = 2e5
 	DefaultExpiredTime = 10 * time.Second
 )
 
@@ -25,23 +24,6 @@ func demoPoolFunc(args interface{}) {
 	n := args.(int)
 	time.Sleep(time.Duration(n) * time.Millisecond)
 }
-
-func longRunningFunc() {
-	for {
-		runtime.Gosched()
-	}
-}
-
-func longRunningPoolFunc(arg interface{}) {
-	if ch, ok := arg.(chan struct{}); ok {
-		<-ch
-		return
-	}
-	for {
-		runtime.Gosched()
-	}
-}
-
 func BenchmarkGoroutines(b *testing.B) {
 	var wg sync.WaitGroup
 
@@ -61,7 +43,7 @@ func BenchmarkGoroutines(b *testing.B) {
 
 func BenchmarkAntsPool(b *testing.B) {
 	var wg sync.WaitGroup
-	p, _ := ants.NewPool(BenchAntsSize, ants.WithExpiryDuration(DefaultExpiredTime))
+	p, _ := ants.NewPool(PoolSize, ants.WithExpiryDuration(DefaultExpiredTime))
 	defer p.Release()
 
 	b.StartTimer()
@@ -80,7 +62,7 @@ func BenchmarkAntsPool(b *testing.B) {
 
 func BenchmarkItogamiPool(b *testing.B) {
 	var wg sync.WaitGroup
-	p := itogami.NewPool(BenchAntsSize)
+	p := itogami.NewPool(PoolSize)
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {

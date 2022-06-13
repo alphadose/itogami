@@ -32,11 +32,11 @@ func (p *PoolWithFunc[T]) Invoke(value T) {
 			(*dataPoint[T])(s).data = value
 			safe_ready((*dataPoint[T])(s).threadPtr)
 			return
-		} else if atomic.LoadUint64(&p.currSize) < p.maxSize {
-			atomic.AddUint64(&p.currSize, 1)
+		} else if atomic.AddUint64(&p.currSize, 1) < p.maxSize {
 			go p.loopQ(unsafe.Pointer(&dataPoint[T]{data: value}))
 			return
 		} else {
+			atomic.AddUint64(&p.currSize, uint64SubtractionConstant)
 			mcall(gosched_m)
 		}
 	}
