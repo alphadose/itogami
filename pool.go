@@ -31,7 +31,7 @@ func (p *Pool) Submit(task func()) {
 			(*slot)(s).task = task
 			safe_ready((*slot)(s).threadPtr)
 			return
-		} else if atomic.AddUint64(&p.currSize, 1) < p.maxSize {
+		} else if atomic.AddUint64(&p.currSize, 1) <= p.maxSize {
 			go p.loopQ(unsafe.Pointer(&slot{task: task}))
 			return
 		} else {

@@ -32,7 +32,7 @@ func (p *PoolWithFunc[T]) Invoke(value T) {
 			(*dataPoint[T])(s).data = value
 			safe_ready((*dataPoint[T])(s).threadPtr)
 			return
-		} else if atomic.AddUint64(&p.currSize, 1) < p.maxSize {
+		} else if atomic.AddUint64(&p.currSize, 1) <= p.maxSize {
 			go p.loopQ(unsafe.Pointer(&dataPoint[T]{data: value}))
 			return
 		} else {
