@@ -9,45 +9,55 @@ import (
 	"github.com/alphadose/itogami"
 )
 
-var sum int32
+const runTimes uint32 = 1000
 
-func myFunc(i int32) {
-	atomic.AddInt32(&sum, i)
+var sum uint32
+
+func myFunc(i uint32) {
+	atomic.AddUint32(&sum, i)
 	fmt.Printf("run with %d\n", i)
 }
 
 func demoFunc() {
 	time.Sleep(10 * time.Millisecond)
-	fmt.Println("Hello World!")
+	println("Hello World")
 }
 
-func main() {
-	runTimes := int32(1000)
-	pool := itogami.NewPool(10)
-	// Use the common pool.
+func examplePool() {
 	var wg sync.WaitGroup
+	// Use the common pool
+	pool := itogami.NewPool(10)
+
 	syncCalculateSum := func() {
 		demoFunc()
 		wg.Done()
 	}
-	for i := int32(0); i < runTimes; i++ {
+	for i := uint32(0); i < runTimes; i++ {
 		wg.Add(1)
+		// Submit task to the pool
 		pool.Submit(syncCalculateSum)
 	}
 	wg.Wait()
-	fmt.Printf("finish all tasks.\n")
+	println("finished all tasks")
+}
 
-	// Use the pool with a function,
-	// set 10 to the capacity of goroutine pool and 1 second for expired duration.
-	p := itogami.NewPoolWithFunc(10, func(i int32) {
+func examplePoolWithFunc() {
+	var wg sync.WaitGroup
+	// Use the pool with a pre-defined function
+	pool := itogami.NewPoolWithFunc(10, func(i uint32) {
 		myFunc(i)
 		wg.Done()
 	})
-	// Submit tasks one by one.
-	for i := int32(0); i < runTimes; i++ {
+	for i := uint32(0); i < runTimes; i++ {
 		wg.Add(1)
-		p.Invoke(i)
+		// Invoke the function with a value
+		pool.Invoke(i)
 	}
 	wg.Wait()
 	fmt.Printf("finish all tasks, result is %d\n", sum)
+}
+
+func main() {
+	examplePool()
+	examplePoolWithFunc()
 }
