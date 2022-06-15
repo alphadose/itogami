@@ -1,6 +1,6 @@
 # Itogami
 
-> The best goroutine pool till date
+> The best goroutine pool till date in terms of performance
 
 Saves a lot of memory and is the fastest among all existing golang threadpool implementations
 
