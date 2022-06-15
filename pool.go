@@ -15,19 +15,19 @@ type Pool struct {
 	_p1      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
 	maxSize  uint64
 	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
-	// using a stack keeps cpu caches warm based on FILO property (in theory atleast)
-	workerQ *Stack
-	_p3     [cacheLinePadSize - unsafe.Sizeof(&Stack{})]byte
+	// using a stack keeps cpu caches warm based on FILO property
+	*Stack
+	_p3 [cacheLinePadSize - unsafe.Sizeof(&Stack{})]byte
 }
 
 func NewPool(size uint64) *Pool {
-	return &Pool{workerQ: NewStack(), maxSize: size}
+	return &Pool{Stack: NewStack(), maxSize: size}
 }
 
 func (p *Pool) Submit(task func()) {
 	var s unsafe.Pointer
 	for {
-		if s = p.workerQ.Pop(); s != nil {
+		if s = p.Pop(); s != nil {
 			(*slot)(s).task = task
 			safe_ready((*slot)(s).threadPtr)
 			return
@@ -45,7 +45,7 @@ func (p *Pool) loopQ(s unsafe.Pointer) {
 	(*slot)(s).threadPtr = GetG()
 	for {
 		(*slot)(s).task()
-		p.workerQ.Push(s)
+		p.Push(s)
 		mcall(fast_park)
 	}
 }

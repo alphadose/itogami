@@ -17,18 +17,18 @@ type PoolWithFunc[T any] struct {
 	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
 	task     func(T)
 	_p3      [cacheLinePadSize - unsafe.Sizeof(func(T) {})]byte
-	workerQ  *Stack
-	_p4      [cacheLinePadSize - unsafe.Sizeof(&Stack{})]byte
+	*Stack
+	_p4 [cacheLinePadSize - unsafe.Sizeof(&Stack{})]byte
 }
 
 func NewPoolWithFunc[T any](size uint64, task func(T)) *PoolWithFunc[T] {
-	return &PoolWithFunc[T]{workerQ: NewStack(), maxSize: size, task: task}
+	return &PoolWithFunc[T]{Stack: NewStack(), maxSize: size, task: task}
 }
 
 func (p *PoolWithFunc[T]) Invoke(value T) {
 	var s unsafe.Pointer
 	for {
-		if s = p.workerQ.Pop(); s != nil {
+		if s = p.Pop(); s != nil {
 			(*dataPoint[T])(s).data = value
 			safe_ready((*dataPoint[T])(s).threadPtr)
 			return
@@ -46,7 +46,7 @@ func (p *PoolWithFunc[T]) loopQ(d unsafe.Pointer) {
 	(*dataPoint[T])(d).threadPtr = GetG()
 	for {
 		p.task((*dataPoint[T])(d).data)
-		p.workerQ.Push(d)
+		p.Push(d)
 		mcall(fast_park)
 	}
 }
