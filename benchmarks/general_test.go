@@ -9,20 +9,8 @@ import (
 	"github.com/panjf2000/ants/v2"
 )
 
-const (
-	RunTimes           = 1e6
-	BenchParam         = 10
-	PoolSize           = 2e5
-	DefaultExpiredTime = 10 * time.Second
-)
-
 func demoFunc() {
 	time.Sleep(time.Duration(BenchParam) * time.Millisecond)
-}
-
-func demoPoolFunc(args interface{}) {
-	time.Sleep(time.Duration(BenchParam) * time.Millisecond)
-	args.(*sync.WaitGroup).Done()
 }
 
 func BenchmarkGoroutines(b *testing.B) {
@@ -76,39 +64,6 @@ func BenchmarkItogamiPool(b *testing.B) {
 				demoFunc()
 				wg.Done()
 			})
-		}
-		wg.Wait()
-	}
-	b.StopTimer()
-}
-
-func BenchmarkAntsPooWithFunc(b *testing.B) {
-	var wg sync.WaitGroup
-	p, _ := ants.NewPoolWithFunc(PoolSize, demoPoolFunc, ants.WithExpiryDuration(DefaultExpiredTime))
-	defer p.Release()
-
-	b.ResetTimer()
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		wg.Add(RunTimes)
-		for j := 0; j < RunTimes; j++ {
-			p.Invoke(&wg)
-		}
-		wg.Wait()
-	}
-	b.StopTimer()
-}
-
-func BenchmarkItogamiPoolWithFunc(b *testing.B) {
-	var wg sync.WaitGroup
-	p := itogami.NewPoolWithFunc(PoolSize, demoPoolFunc)
-
-	b.ResetTimer()
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		wg.Add(RunTimes)
-		for j := 0; j < RunTimes; j++ {
-			p.Invoke(&wg)
 		}
 		wg.Wait()
 	}
