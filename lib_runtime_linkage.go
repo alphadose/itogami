@@ -152,26 +152,10 @@ var multicore = runtime.NumCPU() > 1
 
 // call ready after ensuring the goroutine is parked
 func safe_ready(gp unsafe.Pointer) {
-	// for better microprocessor branch prediction
-	if multicore {
-		for Readgstatus(gp) != _Gwaiting {
-			spin(20)
-		}
-	} else {
-		for Readgstatus(gp) != _Gwaiting {
-			mcall(gosched_m)
-		}
-	}
-	goready(gp, 1)
-}
-
-// simple wait
-func wait() {
-	if multicore {
-		spin(20)
-	} else {
+	for Readgstatus(gp) != _Gwaiting {
 		mcall(gosched_m)
 	}
+	goready(gp, 1)
 }
 
 type waitReason uint8

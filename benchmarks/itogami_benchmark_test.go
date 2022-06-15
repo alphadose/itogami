@@ -27,6 +27,7 @@ func demoPoolFunc(args interface{}) {
 func BenchmarkGoroutines(b *testing.B) {
 	var wg sync.WaitGroup
 
+	b.ResetTimer()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
@@ -46,6 +47,7 @@ func BenchmarkAntsPool(b *testing.B) {
 	p, _ := ants.NewPool(PoolSize, ants.WithExpiryDuration(DefaultExpiredTime))
 	defer p.Release()
 
+	b.ResetTimer()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
@@ -64,6 +66,7 @@ func BenchmarkItogamiPool(b *testing.B) {
 	var wg sync.WaitGroup
 	p := itogami.NewPool(PoolSize)
 
+	b.ResetTimer()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
@@ -83,6 +86,7 @@ func BenchmarkAntsPooWithFunc(b *testing.B) {
 	p, _ := ants.NewPoolWithFunc(PoolSize, demoPoolFunc, ants.WithExpiryDuration(DefaultExpiredTime))
 	defer p.Release()
 
+	b.ResetTimer()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
@@ -99,6 +103,7 @@ func BenchmarkItogamiPoolWithFunc(b *testing.B) {
 	var wg sync.WaitGroup
 	p := itogami.NewPoolWithFunc(PoolSize, demoPoolFunc)
 
+	b.ResetTimer()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)

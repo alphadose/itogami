@@ -18,7 +18,7 @@ type PoolWithFunc[T any] struct {
 	task     func(T)
 	_p3      [cacheLinePadSize - unsafe.Sizeof(func(T) {})]byte
 	*StackFunc
-	_p4 [cacheLinePadSize - unsafe.Sizeof(&Stack{})]byte
+	_p4 [cacheLinePadSize - unsafe.Sizeof(&StackFunc{})]byte
 }
 
 func NewPoolWithFunc[T any](size uint64, task func(T)) *PoolWithFunc[T] {
@@ -33,7 +33,7 @@ func (p *PoolWithFunc[T]) Invoke(value T) {
 			safe_ready((*dataPoint[T])(s).threadPtr)
 			return
 		} else if atomic.AddUint64(&p.currSize, 1) <= p.maxSize {
-			go p.loopQ(unsafe.Pointer(&dataPoint[T]{data: value}))
+			go p.loopQ(&dataPoint[T]{data: value})
 			return
 		} else {
 			atomic.AddUint64(&p.currSize, uint64SubtractionConstant)
@@ -42,11 +42,11 @@ func (p *PoolWithFunc[T]) Invoke(value T) {
 	}
 }
 
-func (p *PoolWithFunc[T]) loopQ(d unsafe.Pointer) {
-	(*dataPoint[T])(d).threadPtr = GetG()
+func (p *PoolWithFunc[T]) loopQ(d *dataPoint[T]) {
+	d.threadPtr = GetG()
 	for {
-		p.task((*dataPoint[T])(d).data)
-		p.Push(d)
+		p.task(d.data)
+		p.Push(unsafe.Pointer(d))
 		mcall(fast_park)
 	}
 }
