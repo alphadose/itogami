@@ -21,9 +21,10 @@ func demoFunc() {
 }
 
 func demoPoolFunc(args interface{}) {
-	n := args.(int)
-	time.Sleep(time.Duration(n) * time.Millisecond)
+	time.Sleep(time.Duration(BenchParam) * time.Millisecond)
+	args.(*sync.WaitGroup).Done()
 }
+
 func BenchmarkGoroutines(b *testing.B) {
 	var wg sync.WaitGroup
 
@@ -52,7 +53,7 @@ func BenchmarkAntsPool(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
 		for j := 0; j < RunTimes; j++ {
-			_ = p.Submit(func() {
+			p.Submit(func() {
 				demoFunc()
 				wg.Done()
 			})
@@ -91,8 +92,7 @@ func BenchmarkAntsPooWithFunc(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
 		for j := 0; j < RunTimes; j++ {
-			p.Invoke(1)
-			wg.Done()
+			p.Invoke(&wg)
 		}
 		wg.Wait()
 	}
@@ -108,8 +108,7 @@ func BenchmarkItogamiPoolWithFunc(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
 		for j := 0; j < RunTimes; j++ {
-			p.Invoke(1)
-			wg.Done()
+			p.Invoke(&wg)
 		}
 		wg.Wait()
 	}
