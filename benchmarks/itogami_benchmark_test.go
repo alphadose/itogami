@@ -77,3 +77,36 @@ func BenchmarkItogamiPool(b *testing.B) {
 	}
 	b.StopTimer()
 }
+
+func BenchmarkAntsPooWithFunc(b *testing.B) {
+	var wg sync.WaitGroup
+	p, _ := ants.NewPoolWithFunc(PoolSize, demoPoolFunc, ants.WithExpiryDuration(DefaultExpiredTime))
+	defer p.Release()
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		wg.Add(RunTimes)
+		for j := 0; j < RunTimes; j++ {
+			p.Invoke(1)
+			wg.Done()
+		}
+		wg.Wait()
+	}
+	b.StopTimer()
+}
+
+func BenchmarkItogamiPoolWithFunc(b *testing.B) {
+	var wg sync.WaitGroup
+	p := itogami.NewPoolWithFunc(PoolSize, demoPoolFunc)
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		wg.Add(RunTimes)
+		for j := 0; j < RunTimes; j++ {
+			p.Invoke(1)
+			wg.Done()
+		}
+		wg.Wait()
+	}
+	b.StopTimer()
+}
