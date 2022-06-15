@@ -25,14 +25,14 @@ func NewPool(size uint64) *Pool {
 }
 
 func (p *Pool) Submit(task func()) {
-	var s unsafe.Pointer
+	var s *slot
 	for {
 		if s = p.Pop(); s != nil {
-			(*slot)(s).task = task
-			safe_ready((*slot)(s).threadPtr)
+			s.task = task
+			safe_ready(s.threadPtr)
 			return
 		} else if atomic.AddUint64(&p.currSize, 1) <= p.maxSize {
-			go p.loopQ(unsafe.Pointer(&slot{task: task}))
+			go p.loopQ(&slot{task: task})
 			return
 		} else {
 			atomic.AddUint64(&p.currSize, uint64SubtractionConstant)
@@ -41,10 +41,10 @@ func (p *Pool) Submit(task func()) {
 	}
 }
 
-func (p *Pool) loopQ(s unsafe.Pointer) {
-	(*slot)(s).threadPtr = GetG()
+func (p *Pool) loopQ(s *slot) {
+	s.threadPtr = GetG()
 	for {
-		(*slot)(s).task()
+		s.task()
 		p.Push(s)
 		mcall(fast_park)
 	}

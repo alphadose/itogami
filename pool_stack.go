@@ -16,7 +16,7 @@ type Stack struct {
 
 type directItem struct {
 	next  unsafe.Pointer
-	value unsafe.Pointer
+	value *slot
 }
 
 // NewStack returns a new stack
@@ -25,36 +25,33 @@ func NewStack() *Stack {
 }
 
 // Pop pops value from the top of the stack
-func (s *Stack) Pop() (value unsafe.Pointer) {
-	var (
-		top  *directItem
-		next unsafe.Pointer
-	)
+func (s *Stack) Pop() (value *slot) {
+	var top, next unsafe.Pointer
 	for {
-		top = (*directItem)(atomic.LoadPointer(&s.top))
+		top = atomic.LoadPointer(&s.top)
 		if top == nil {
 			return
 		}
-		next = atomic.LoadPointer(&top.next)
-		if atomic.CompareAndSwapPointer(&s.top, unsafe.Pointer(top), next) {
-			value = top.value
-			top.next, top.value = nil, nil
-			itemPool.Put(top)
+		next = atomic.LoadPointer(&(*directItem)(top).next)
+		if atomic.CompareAndSwapPointer(&s.top, top, next) {
+			value = (*directItem)(top).value
+			(*directItem)(top).next, (*directItem)(top).value = nil, nil
+			itemPool.Put((*directItem)(top))
 			return
 		}
 	}
 }
 
 // Push pushes a value on top of the stack
-func (s *Stack) Push(v unsafe.Pointer) {
+func (s *Stack) Push(v *slot) {
 	var (
 		top  unsafe.Pointer
 		item = itemPool.Get().(*directItem)
 	)
-	(*directItem)(item).value = v
+	item.value = v
 	for {
 		top = atomic.LoadPointer(&s.top)
-		(*directItem)(item).next = top
+		item.next = top
 		if atomic.CompareAndSwapPointer(&s.top, top, unsafe.Pointer(item)) {
 			return
 		}

@@ -17,12 +17,12 @@ type PoolWithFunc[T any] struct {
 	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
 	task     func(T)
 	_p3      [cacheLinePadSize - unsafe.Sizeof(func(T) {})]byte
-	*Stack
+	*StackFunc
 	_p4 [cacheLinePadSize - unsafe.Sizeof(&Stack{})]byte
 }
 
 func NewPoolWithFunc[T any](size uint64, task func(T)) *PoolWithFunc[T] {
-	return &PoolWithFunc[T]{Stack: NewStack(), maxSize: size, task: task}
+	return &PoolWithFunc[T]{StackFunc: NewStackFunc(), maxSize: size, task: task}
 }
 
 func (p *PoolWithFunc[T]) Invoke(value T) {
