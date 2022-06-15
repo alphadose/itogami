@@ -6,6 +6,7 @@ import (
 	"unsafe"
 )
 
+// global memory pool for all items used in Pool
 var itemPool = sync.Pool{New: func() any { return &directItem{next: nil, value: nil} }}
 
 // Stack implements lock-free freelist based stack
@@ -14,6 +15,7 @@ type Stack struct {
 	top unsafe.Pointer
 }
 
+// a single item in this stack
 type directItem struct {
 	next  unsafe.Pointer
 	value *slot

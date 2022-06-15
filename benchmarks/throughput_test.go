@@ -13,7 +13,7 @@ var wg1, wg2, wg3 sync.WaitGroup
 
 const sleepDuration uint8 = 10
 
-func antsFunc(args interface{}) {
+func antsFunc(args any) {
 	time.Sleep(time.Duration(args.(uint8)) * time.Millisecond)
 	wg2.Done()
 }

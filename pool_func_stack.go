@@ -6,6 +6,7 @@ import (
 	"unsafe"
 )
 
+// global memory pool for all items used in PoolWithFunc
 var dataPool = sync.Pool{New: func() any { return &dataItem{next: nil, value: nil} }}
 
 // StackFunc is for pool with func

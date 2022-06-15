@@ -13,7 +13,7 @@ func demoFunc() {
 	time.Sleep(time.Duration(BenchParam) * time.Millisecond)
 }
 
-func BenchmarkGoroutines(b *testing.B) {
+func BenchmarkUnlimitedGoroutines(b *testing.B) {
 	var wg sync.WaitGroup
 
 	b.ResetTimer()
