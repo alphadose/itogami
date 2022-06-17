@@ -25,14 +25,16 @@ type PoolWithFunc[T any] struct {
 	_p3      [cacheLinePadSize - unsafe.Sizeof(func(T) {})]byte
 	top      unsafe.Pointer
 	_p4      [cacheLinePadSize - unsafe.Sizeof(unsafe.Pointer(nil))]byte
-	sync.Pool
+	free     func(any)
+	_p5      [cacheLinePadSize - unsafe.Sizeof(func() {})]byte
+	alloc    func() any
+	_p6      [cacheLinePadSize - unsafe.Sizeof(func() {})]byte
 }
 
 // NewPoolWithFunc returns a new PoolWithFunc
 func NewPoolWithFunc[T any](size uint64, task func(T)) *PoolWithFunc[T] {
-	return &PoolWithFunc[T]{maxSize: size, task: task, Pool: sync.Pool{
-		New: func() any { return new(dataItem[T]) },
-	}}
+	dataPool := sync.Pool{New: func() any { return new(dataItem[T]) }}
+	return &PoolWithFunc[T]{maxSize: size, task: task, alloc: dataPool.Get, free: dataPool.Put}
 }
 
 // Invoke invokes the pre-defined method in PoolWithFunc by assigning the data to an already existing worker
@@ -85,7 +87,7 @@ func (self *PoolWithFunc[T]) pop() (value *slotFunc[T]) {
 		if atomic.CompareAndSwapPointer(&self.top, top, next) {
 			value = (*dataItem[T])(top).value
 			(*dataItem[T])(top).next, (*dataItem[T])(top).value = nil, nil
-			self.Put((*dataItem[T])(top))
+			self.free((*dataItem[T])(top))
 			return
 		}
 	}
@@ -95,7 +97,7 @@ func (self *PoolWithFunc[T]) pop() (value *slotFunc[T]) {
 func (self *PoolWithFunc[T]) push(v *slotFunc[T]) {
 	var (
 		top  unsafe.Pointer
-		item = self.Get().(*dataItem[T])
+		item = self.alloc().(*dataItem[T])
 	)
 	item.value = v
 	for {
