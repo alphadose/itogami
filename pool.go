@@ -1,6 +1,7 @@
 package itogami
 
 import (
+	"sync"
 	"sync/atomic"
 	"unsafe"
 )
@@ -18,13 +19,13 @@ type Pool struct {
 	maxSize  uint64
 	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
 	// using a stack keeps cpu caches warm based on FILO property
-	*Stack
-	_p3 [cacheLinePadSize - unsafe.Sizeof(&Stack{})]byte
+	top unsafe.Pointer
+	_p3 [cacheLinePadSize - unsafe.Sizeof(unsafe.Pointer(nil))]byte
 }
 
 // NewPool returns a new thread pool
 func NewPool(size uint64) *Pool {
-	return &Pool{Stack: NewStack(), maxSize: size}
+	return &Pool{maxSize: size}
 }
 
 // Submit submits a new task to the pool
@@ -34,7 +35,7 @@ func NewPool(size uint64) *Pool {
 func (p *Pool) Submit(task func()) {
 	var s *slot
 	for {
-		if s = p.Pop(); s != nil {
+		if s = p.pop(); s != nil {
 			s.task = task
 			safe_ready(s.threadPtr)
 			return
@@ -57,8 +58,54 @@ func (p *Pool) loopQ(s *slot) {
 		// exec task
 		s.task()
 		// notify availability by pushing self reference into stack
-		p.Push(s)
+		p.push(s)
 		// park and wait for call
 		mcall(fast_park)
+	}
+}
+
+// global memory pool for all items used in Pool
+var itemPool = sync.Pool{New: func() any { return &directItem{next: nil, value: nil} }}
+
+// internal lock-free stack implementation for parking and waking up goroutines
+// Credits -> https://github.com/golang-design/lockfree
+
+// a single item in this stack
+type directItem struct {
+	next  unsafe.Pointer
+	value *slot
+}
+
+// Pop pops value from the top of the stack
+func (s *Pool) pop() (value *slot) {
+	var top, next unsafe.Pointer
+	for {
+		top = atomic.LoadPointer(&s.top)
+		if top == nil {
+			return
+		}
+		next = atomic.LoadPointer(&(*directItem)(top).next)
+		if atomic.CompareAndSwapPointer(&s.top, top, next) {
+			value = (*directItem)(top).value
+			(*directItem)(top).next, (*directItem)(top).value = nil, nil
+			itemPool.Put((*directItem)(top))
+			return
+		}
+	}
+}
+
+// Push pushes a value on top of the stack
+func (s *Pool) push(v *slot) {
+	var (
+		top  unsafe.Pointer
+		item = itemPool.Get().(*directItem)
+	)
+	item.value = v
+	for {
+		top = atomic.LoadPointer(&s.top)
+		item.next = top
+		if atomic.CompareAndSwapPointer(&s.top, top, unsafe.Pointer(item)) {
+			return
+		}
 	}
 }
