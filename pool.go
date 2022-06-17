@@ -65,7 +65,11 @@ func (self *Pool) loopQ(s *slot) {
 }
 
 // global memory pool for all items used in Pool
-var itemPool = sync.Pool{New: func() any { return new(node) }}
+var (
+	itemPool  = sync.Pool{New: func() any { return new(node) }}
+	itemAlloc = itemPool.Get
+	itemFree  = itemPool.Put
+)
 
 // internal lock-free stack implementation for parking and waking up goroutines
 // Credits -> https://github.com/golang-design/lockfree
@@ -88,7 +92,7 @@ func (self *Pool) pop() (value *slot) {
 		if atomic.CompareAndSwapPointer(&self.top, top, next) {
 			value = (*node)(top).value
 			(*node)(top).next, (*node)(top).value = nil, nil
-			itemPool.Put((*node)(top))
+			itemFree((*node)(top))
 			return
 		}
 	}
@@ -98,7 +102,7 @@ func (self *Pool) pop() (value *slot) {
 func (self *Pool) push(v *slot) {
 	var (
 		top  unsafe.Pointer
-		item = itemPool.Get().(*node)
+		item = itemAlloc().(*node)
 	)
 	item.value = v
 	for {
