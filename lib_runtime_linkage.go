@@ -152,7 +152,7 @@ var multicore = runtime.NumCPU() > 1
 
 // call ready after ensuring the goroutine is parked
 func safe_ready(gp unsafe.Pointer) {
-	for Readgstatus(gp) != _Gwaiting {
+	for Readgstatus(gp)&^_Gscan != _Gwaiting {
 		mcall(gosched_m)
 	}
 	goready(gp, 1)
