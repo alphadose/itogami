@@ -6,7 +6,7 @@ import (
 	"unsafe"
 )
 
-// a single slot for a worker in the thread pool
+// a single slot for a worker in Pool
 type slot struct {
 	threadPtr unsafe.Pointer
 	task      func()
@@ -32,79 +32,79 @@ func NewPool(size uint64) *Pool {
 // it first tries to use already existing goroutines
 // if all existing goroutines are present, it tries to add a new goroutine to the pool if the pool capacity is not exceeded
 // in case the pool capacity exits, this function yields the processor to other goroutines and loops again for finding available workers
-func (p *Pool) Submit(task func()) {
+func (self *Pool) Submit(task func()) {
 	var s *slot
 	for {
-		if s = p.pop(); s != nil {
+		if s = self.pop(); s != nil {
 			s.task = task
 			safe_ready(s.threadPtr)
 			return
-		} else if atomic.AddUint64(&p.currSize, 1) <= p.maxSize {
+		} else if atomic.AddUint64(&self.currSize, 1) <= self.maxSize {
 			s = &slot{task: task}
-			go p.loopQ(s)
+			go self.loopQ(s)
 			return
 		} else {
-			atomic.AddUint64(&p.currSize, uint64SubtractionConstant)
+			atomic.AddUint64(&self.currSize, uint64SubtractionConstant)
 			mcall(gosched_m)
 		}
 	}
 }
 
 // loopQ is the looping function for every worker goroutine
-func (p *Pool) loopQ(s *slot) {
+func (self *Pool) loopQ(s *slot) {
 	// store self goroutine pointer
 	s.threadPtr = GetG()
 	for {
 		// exec task
 		s.task()
 		// notify availability by pushing self reference into stack
-		p.push(s)
+		self.push(s)
 		// park and wait for call
 		mcall(fast_park)
 	}
 }
 
 // global memory pool for all items used in Pool
-var itemPool = sync.Pool{New: func() any { return &directItem{next: nil, value: nil} }}
+var itemPool = sync.Pool{New: func() any { return new(node) }}
 
 // internal lock-free stack implementation for parking and waking up goroutines
 // Credits -> https://github.com/golang-design/lockfree
 
-// a single item in this stack
-type directItem struct {
+// a single node in this stack
+type node struct {
 	next  unsafe.Pointer
 	value *slot
 }
 
-// Pop pops value from the top of the stack
-func (s *Pool) pop() (value *slot) {
+// pop pops value from the top of the stack
+func (self *Pool) pop() (value *slot) {
 	var top, next unsafe.Pointer
 	for {
-		top = atomic.LoadPointer(&s.top)
+		top = atomic.LoadPointer(&self.top)
 		if top == nil {
 			return
 		}
-		next = atomic.LoadPointer(&(*directItem)(top).next)
-		if atomic.CompareAndSwapPointer(&s.top, top, next) {
-			value = (*directItem)(top).value
-			(*directItem)(top).next, (*directItem)(top).value = nil, nil
-			itemPool.Put((*directItem)(top))
+		next = atomic.LoadPointer(&(*node)(top).next)
+		if atomic.CompareAndSwapPointer(&self.top, top, next) {
+			value = (*node)(top).value
+			(*node)(top).next, (*node)(top).value = nil, nil
+			itemPool.Put((*node)(top))
 			return
 		}
 	}
 }
 
-// Push pushes a value on top of the stack
-func (s *Pool) push(v *slot) {
+// push pushes a value on top of the stack
+func (self *Pool) push(v *slot) {
 	var (
 		top  unsafe.Pointer
-		item = itemPool.Get().(*directItem)
+		item = itemPool.Get().(*node)
 	)
 	item.value = v
 	for {
-		top = atomic.LoadPointer(&s.top)
+		top = atomic.LoadPointer(&self.top)
 		item.next = top
-		if atomic.CompareAndSwapPointer(&s.top, top, unsafe.Pointer(item)) {
+		if atomic.CompareAndSwapPointer(&self.top, top, unsafe.Pointer(item)) {
 			return
 		}
 	}
