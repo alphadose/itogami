@@ -2,7 +2,7 @@
 
 > The best goroutine pool in terms of performance
 
-Saves a lot of memory and is the fastest among all existing golang thread-pool implementations
+By limiting concurrency with a fixed pool size and recycling goroutines, itogami saves a lot of memory as compared to usng unlimited goroutines and also itogami is the fatest and has the least allocs/op among all existing goroutine pool implementations 
 
 Benchmarks to support the above claims [here](#benchmarks)
 
