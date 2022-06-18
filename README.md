@@ -84,9 +84,9 @@ func main() {
 
 ## Benchmarks
 
-Benchmarking was performed against existing golang threadpool implementations [Ants](https://github.com/panjf2000/ants) and [Gamma-Zero-Worker-Pool](https://github.com/gammazero/workerpool) and unlimited goroutines
+Benchmarking was performed against existing goroutine pool implementations [Ants](https://github.com/panjf2000/ants) and [Gamma-Zero-Worker-Pool](https://github.com/gammazero/workerpool) and unlimited goroutines
 
-Thread pool size -> 50k
+Pool size -> 50k
 
 CPU -> M1, arm64, 8 cores, 3.2 GHz
 
@@ -115,9 +115,9 @@ ItogamiPool-8           1.05M ± 0%
 
 The following conclusions can be drawn from the above results:-
 
-1. [Itogami](https://github.com/alphadose/itogami) is the fastest among all threadpool implementations and slower only than unlimited goroutines
+1. [Itogami](https://github.com/alphadose/itogami) is the fastest among all goroutine pool implementations and slower only than unlimited goroutines
 2. [Itogami](https://github.com/alphadose/itogami) has the least `allocs/op` and hence the memory usage scales really well with high load
-3. The memory used per operation is in the acceptable range of other threadpools and drastically lower than unlimited goroutines
+3. The memory used per operation is in the acceptable range of other pools and drastically lower than unlimited goroutines
 4. The tolerance (± %) for [Itogami](https://github.com/alphadose/itogami) is quite low for all 3 metrics indicating that the algorithm is quite stable overall
 
 
