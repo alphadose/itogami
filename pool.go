@@ -29,9 +29,11 @@ func NewPool(size uint64) *Pool {
 }
 
 // Submit submits a new task to the pool
-// it first tries to use already existing goroutines
-// if all existing goroutines are present, it tries to add a new goroutine to the pool if the pool capacity is not exceeded
-// in case the pool capacity exits, this function yields the processor to other goroutines and loops again for finding available workers
+// it first tries to use already parked goroutines from the stack if any
+// if there are no available worker goroutines, it tries to add a
+// new goroutine to the pool if the pool capacity is not exceeded
+// in case the pool capacity hit its maximum limit, this function yields the processor to other
+// goroutines and loops again for finding available workers
 func (self *Pool) Submit(task func()) {
 	var s *slot
 	for {
