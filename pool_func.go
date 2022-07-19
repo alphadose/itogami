@@ -20,15 +20,12 @@ type PoolWithFunc[T any] struct {
 	currSize uint64
 	_p1      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
 	maxSize  uint64
-	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
-	task     func(T)
-	_p3      [cacheLinePadSize - unsafe.Sizeof(func(T) {})]byte
-	top      unsafe.Pointer
-	_p4      [cacheLinePadSize - unsafe.Sizeof(unsafe.Pointer(nil))]byte
-	free     func(any)
-	_p5      [cacheLinePadSize - unsafe.Sizeof(func() {})]byte
 	alloc    func() any
-	_p6      [cacheLinePadSize - unsafe.Sizeof(func() {})]byte
+	free     func(any)
+	task     func(T)
+	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0)) - 3*unsafe.Sizeof(func() {})]byte
+	top      unsafe.Pointer
+	_p3      [cacheLinePadSize - unsafe.Sizeof(unsafe.Pointer(nil))]byte
 }
 
 // NewPoolWithFunc returns a new PoolWithFunc
