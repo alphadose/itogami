@@ -12,23 +12,23 @@ func demoFunc() {
 	time.Sleep(time.Duration(BenchParam) * time.Millisecond)
 }
 
-// func BenchmarkUnlimitedGoroutines(b *testing.B) {
-// 	var wg sync.WaitGroup
+func BenchmarkUnlimitedGoroutines(b *testing.B) {
+	var wg sync.WaitGroup
 
-// 	b.ResetTimer()
-// 	b.StartTimer()
-// 	for i := 0; i < b.N; i++ {
-// 		wg.Add(RunTimes)
-// 		for j := 0; j < RunTimes; j++ {
-// 			go func() {
-// 				demoFunc()
-// 				wg.Done()
-// 			}()
-// 		}
-// 		wg.Wait()
-// 	}
-// 	b.StopTimer()
-// }
+	b.ResetTimer()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		wg.Add(RunTimes)
+		for j := 0; j < RunTimes; j++ {
+			go func() {
+				demoFunc()
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+	}
+	b.StopTimer()
+}
 
 func BenchmarkItogamiPool(b *testing.B) {
 	var wg sync.WaitGroup

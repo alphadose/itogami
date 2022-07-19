@@ -140,6 +140,12 @@ func gosched_m(gp unsafe.Pointer)
 //go:linkname spin runtime.procyield
 func spin(cycles uint32)
 
+//go:linkname ProcPin runtime.procPin
+func ProcPin() int
+
+//go:linkname ProcUnpin runtime.procUnpin
+func ProcUnpin()
+
 // custom parking function
 func fast_park(gp unsafe.Pointer) {
 	dropg()
