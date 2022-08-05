@@ -8,7 +8,7 @@ Benchmarks to support the above claims [here](#benchmarks)
 
 ## Installation
 
-You need Golang [1.18.x](https://go.dev/dl/) or above since this package uses generics
+You need Golang [1.19.x](https://go.dev/dl/) or above
 
 ```bash
 $ go get github.com/alphadose/itogami@v0.3.0
@@ -101,12 +101,12 @@ OS -> darwin
 Results were computed from [benchstat](https://pkg.go.dev/golang.org/x/perf/cmd/benchstat) of 30 cases
 ```
 name                   time/op
-UnlimitedGoroutines-8   301ms ± 4%
+UnlimitedGoroutines-8   331ms ± 4%
 ErrGroup-8              515ms ± 9%
 AntsPool-8              582ms ± 9%
 GammaZeroPool-8         740ms ±13%
 BytedanceGoPool-8       572ms ±18%
-ItogamiPool-8           331ms ± 7%
+ItogamiPool-8           337ms ± 1%
 
 name                   alloc/op
 UnlimitedGoroutines-8  96.3MB ± 0%
@@ -120,14 +120,14 @@ name                   allocs/op
 UnlimitedGoroutines-8   2.00M ± 0%
 ErrGroup-8              3.00M ± 0%
 AntsPool-8              1.10M ± 2%
-GammaZeroPool-8         1.05M ± 0%
+GammaZeroPool-8         1.08M ± 0%
 BytedanceGoPool-8       2.59M ± 1%
-ItogamiPool-8           1.05M ± 0%
+ItogamiPool-8           1.08M ± 0%
 ```
 
 The following conclusions can be drawn from the above results:-
 
-1. [Itogami](https://github.com/alphadose/itogami) is the fastest among all goroutine pool implementations and slower only than unlimited goroutines
+1. [Itogami](https://github.com/alphadose/itogami) is the fastest among all goroutine pool implementations and slightly slower than unlimited goroutines
 2. [Itogami](https://github.com/alphadose/itogami) has the least `allocs/op` and hence the memory usage scales really well with high load
 3. The memory used per operation is in the acceptable range of other pools and drastically lower than unlimited goroutines
 4. The tolerance (± %) for [Itogami](https://github.com/alphadose/itogami) is quite low for all 3 metrics indicating that the algorithm is quite stable overall

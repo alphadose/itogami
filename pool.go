@@ -19,8 +19,8 @@ type Pool struct {
 	maxSize  uint64
 	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
 	// using a stack keeps cpu caches warm based on FILO property
-	top unsafe.Pointer
-	_p3 [cacheLinePadSize - unsafe.Sizeof(unsafe.Pointer(nil))]byte
+	top atomic.Pointer[node]
+	_p3 [cacheLinePadSize - unsafe.Sizeof(atomic.Pointer[node]{})]byte
 }
 
 // NewPool returns a new thread pool
@@ -78,23 +78,24 @@ var (
 
 // a single node in this stack
 type node struct {
-	next  unsafe.Pointer
+	next  atomic.Pointer[node]
 	value *slot
 }
 
 // pop pops value from the top of the stack
 func (self *Pool) pop() (value *slot) {
-	var top, next unsafe.Pointer
+	var top, next *node
 	for {
-		top = atomic.LoadPointer(&self.top)
+		top = self.top.Load()
 		if top == nil {
 			return
 		}
-		next = atomic.LoadPointer(&(*node)(top).next)
-		if atomic.CompareAndSwapPointer(&self.top, top, next) {
-			value = (*node)(top).value
-			(*node)(top).next, (*node)(top).value = nil, nil
-			itemFree((*node)(top))
+		next = top.next.Load()
+		if self.top.CompareAndSwap(top, next) {
+			value = top.value
+			top.value = nil
+			top.next.Store(nil)
+			itemFree(top)
 			return
 		}
 	}
@@ -103,14 +104,14 @@ func (self *Pool) pop() (value *slot) {
 // push pushes a value on top of the stack
 func (self *Pool) push(v *slot) {
 	var (
-		top  unsafe.Pointer
+		top  *node
 		item = itemAlloc().(*node)
 	)
 	item.value = v
 	for {
-		top = atomic.LoadPointer(&self.top)
-		item.next = top
-		if atomic.CompareAndSwapPointer(&self.top, top, unsafe.Pointer(item)) {
+		top = self.top.Load()
+		item.next.Store(top)
+		if self.top.CompareAndSwap(top, item) {
 			return
 		}
 	}

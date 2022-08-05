@@ -6,27 +6,30 @@ import (
 	"unsafe"
 )
 
-// a single slot for a worker in PoolWithFunc
-type slotFunc[T any] struct {
-	threadPtr unsafe.Pointer
-	data      T
-}
+type (
+	// a single slot for a worker in PoolWithFunc
+	slotFunc[T any] struct {
+		threadPtr unsafe.Pointer
+		data      T
+	}
 
-// PoolWithFunc is used for spawning workers for a single pre-defined function with myriad inputs
-// useful for throughput bound cases
-// has lower memory usage and allocs per op than the default Pool
-//  ( type -> func(T) {} ) where T is a generic parameter
-type PoolWithFunc[T any] struct {
-	currSize uint64
-	_p1      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
-	maxSize  uint64
-	alloc    func() any
-	free     func(any)
-	task     func(T)
-	_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0)) - 3*unsafe.Sizeof(func() {})]byte
-	top      unsafe.Pointer
-	_p3      [cacheLinePadSize - unsafe.Sizeof(unsafe.Pointer(nil))]byte
-}
+	// PoolWithFunc is used for spawning workers for a single pre-defined function with myriad inputs
+	// useful for throughput bound cases
+	// has lower memory usage and allocs per op than the default Pool
+	//
+	//	( type -> func(T) {} ) where T is a generic parameter
+	PoolWithFunc[T any] struct {
+		currSize uint64
+		_p1      [cacheLinePadSize - unsafe.Sizeof(uint64(0))]byte
+		maxSize  uint64
+		alloc    func() any
+		free     func(any)
+		task     func(T)
+		_p2      [cacheLinePadSize - unsafe.Sizeof(uint64(0)) - 3*unsafe.Sizeof(func() {})]byte
+		top      atomic.Pointer[dataItem[T]]
+		_p3      [cacheLinePadSize - unsafe.Sizeof(atomic.Pointer[dataItem[T]]{})]byte
+	}
+)
 
 // NewPoolWithFunc returns a new PoolWithFunc
 func NewPoolWithFunc[T any](size uint64, task func(T)) *PoolWithFunc[T] {
@@ -68,23 +71,24 @@ func (self *PoolWithFunc[T]) loopQ(d *slotFunc[T]) {
 
 // a single node in the stack
 type dataItem[T any] struct {
-	next  unsafe.Pointer
+	next  atomic.Pointer[dataItem[T]]
 	value *slotFunc[T]
 }
 
 // pop pops value from the top of the stack
 func (self *PoolWithFunc[T]) pop() (value *slotFunc[T]) {
-	var top, next unsafe.Pointer
+	var top, next *dataItem[T]
 	for {
-		top = atomic.LoadPointer(&self.top)
+		top = self.top.Load()
 		if top == nil {
 			return
 		}
-		next = atomic.LoadPointer(&(*dataItem[T])(top).next)
-		if atomic.CompareAndSwapPointer(&self.top, top, next) {
-			value = (*dataItem[T])(top).value
-			(*dataItem[T])(top).next, (*dataItem[T])(top).value = nil, nil
-			self.free((*dataItem[T])(top))
+		next = top.next.Load()
+		if self.top.CompareAndSwap(top, next) {
+			value = top.value
+			top.value = nil
+			top.next.Store(nil)
+			self.free(top)
 			return
 		}
 	}
@@ -93,14 +97,14 @@ func (self *PoolWithFunc[T]) pop() (value *slotFunc[T]) {
 // push pushes a value on top of the stack
 func (self *PoolWithFunc[T]) push(v *slotFunc[T]) {
 	var (
-		top  unsafe.Pointer
+		top  *dataItem[T]
 		item = self.alloc().(*dataItem[T])
 	)
 	item.value = v
 	for {
-		top = atomic.LoadPointer(&self.top)
-		item.next = top
-		if atomic.CompareAndSwapPointer(&self.top, top, unsafe.Pointer(item)) {
+		top = self.top.Load()
+		item.next.Store(top)
+		if self.top.CompareAndSwap(top, item) {
 			return
 		}
 	}
