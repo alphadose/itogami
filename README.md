@@ -11,7 +11,7 @@ Benchmarks to support the above claims [here](#benchmarks)
 You need Golang [1.19.x](https://go.dev/dl/) or above
 
 ```bash
-$ go get github.com/alphadose/itogami@v0.3.0
+$ go get github.com/alphadose/itogami
 ```
 
 ## Usage
