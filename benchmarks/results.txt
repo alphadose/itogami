@@ -1,0 +1,44 @@
+goos: darwin
+goarch: arm64
+BenchmarkGolangScheduler-8    	       4	 325379469 ns/op	97362064 B/op	 2011016 allocs/op
+BenchmarkGolangScheduler-8    	       4	 330800312 ns/op	96796088 B/op	 2007984 allocs/op
+BenchmarkGolangScheduler-8    	       3	 334437222 ns/op	97644672 B/op	 2017132 allocs/op
+BenchmarkGolangScheduler-8    	       4	 331170417 ns/op	96860712 B/op	 2008943 allocs/op
+BenchmarkGolangScheduler-8    	       4	 325232521 ns/op	96833184 B/op	 2008679 allocs/op
+BenchmarkGolangScheduler-8    	       3	 336981083 ns/op	96986688 B/op	 2010278 allocs/op
+BenchmarkGolangScheduler-8    	       4	 325857375 ns/op	96634944 B/op	 2006614 allocs/op
+BenchmarkGolangScheduler-8    	       4	 328751760 ns/op	96435600 B/op	 2004537 allocs/op
+BenchmarkGolangScheduler-8    	       4	 327303364 ns/op	96994176 B/op	 2010356 allocs/op
+BenchmarkGolangScheduler-8    	       3	 338511361 ns/op	96996000 B/op	 2010375 allocs/op
+BenchmarkGolangScheduler-8    	       4	 328043677 ns/op	96849984 B/op	 2008854 allocs/op
+BenchmarkGolangScheduler-8    	       4	 329423219 ns/op	96604040 B/op	 2005668 allocs/op
+BenchmarkGolangScheduler-8    	       4	 327282896 ns/op	97207296 B/op	 2012576 allocs/op
+BenchmarkGolangScheduler-8    	       4	 327017865 ns/op	97157496 B/op	 2012057 allocs/op
+BenchmarkGolangScheduler-8    	       4	 327628958 ns/op	96976680 B/op	 2010173 allocs/op
+BenchmarkGolangScheduler-8    	       4	 323917969 ns/op	96746424 B/op	 2007775 allocs/op
+BenchmarkGolangScheduler-8    	       4	 326054823 ns/op	96585624 B/op	 2006100 allocs/op
+BenchmarkGolangScheduler-8    	       4	 329925312 ns/op	97111032 B/op	 2011573 allocs/op
+BenchmarkGolangScheduler-8    	       3	 337286125 ns/op	96733600 B/op	 2007641 allocs/op
+BenchmarkGolangScheduler-8    	       4	 325744219 ns/op	96543456 B/op	 2005661 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 352192139 ns/op	27435637 B/op	 1080331 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 333139396 ns/op	24941968 B/op	 1059410 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 338506781 ns/op	24135296 B/op	 1059818 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 337268114 ns/op	24050000 B/op	 1059191 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 333574406 ns/op	23920776 B/op	 1058241 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 341446125 ns/op	26320800 B/op	 1075888 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 334866250 ns/op	26256394 B/op	 1075414 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 337006823 ns/op	23803976 B/op	 1057382 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 321509260 ns/op	27837112 B/op	 1056679 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 335832681 ns/op	26486506 B/op	 1077106 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 339046806 ns/op	26092832 B/op	 1074212 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 321233510 ns/op	23762880 B/op	 1057080 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 341273375 ns/op	26310784 B/op	 1075493 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 338188625 ns/op	23677608 B/op	 1056453 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 338262542 ns/op	23849128 B/op	 1057714 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 343186417 ns/op	26236629 B/op	 1075269 allocs/op
+BenchmarkItogamiScheduler-8   	       4	 335103219 ns/op	24005912 B/op	 1058867 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 346352097 ns/op	36858378 B/op	 1074241 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 358339250 ns/op	26140160 B/op	 1074560 allocs/op
+BenchmarkItogamiScheduler-8   	       3	 355273778 ns/op	26407264 B/op	 1076524 allocs/op
+PASS
+ok  	command-line-arguments	291.746s
