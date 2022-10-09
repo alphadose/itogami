@@ -5,16 +5,6 @@ import (
 	"unsafe"
 )
 
-// Pool represents the thread-pool for performing any kind of task ( type -> func() {} )
-type Pool struct {
-	// using a stack keeps cpu caches warm based on FILO property
-	top atomic.Pointer[node]
-	_   [cacheLinePadSize - unsafe.Sizeof(atomic.Pointer[node]{})]byte
-}
-
-// globally referenced pool object
-var pool = Pool{}
-
 // Submit submits a new task to the pool
 // tries to re-use existing goroutine if available else it spawns a new goroutine
 func Submit(task func()) {
@@ -39,6 +29,9 @@ func loopQ(task func()) {
 // internal lock-free stack implementation for parking and waking up goroutines
 // Credits -> https://github.com/golang-design/lockfree
 
+// global pointer to stack top
+var stackTop atomic.Pointer[node]
+
 // a single node in this stack
 type node struct {
 	next      atomic.Pointer[node]
@@ -50,12 +43,12 @@ type node struct {
 func pop() *node {
 	var top, next *node
 	for {
-		top = pool.top.Load()
+		top = stackTop.Load()
 		if top == nil {
 			return nil
 		}
 		next = top.next.Load()
-		if pool.top.CompareAndSwap(top, next) {
+		if stackTop.CompareAndSwap(top, next) {
 			top.next.Store(nil)
 			return top
 		}
@@ -66,9 +59,9 @@ func pop() *node {
 func push(item *node) {
 	var top *node
 	for {
-		top = pool.top.Load()
+		top = stackTop.Load()
 		item.next.Store(top)
-		if pool.top.CompareAndSwap(top, item) {
+		if stackTop.CompareAndSwap(top, item) {
 			return
 		}
 	}
