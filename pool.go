@@ -12,28 +12,26 @@ type Pool struct {
 	_   [cacheLinePadSize - unsafe.Sizeof(atomic.Pointer[node]{})]byte
 }
 
-// NewPool returns a new thread pool
-func NewPool(size uint64) *Pool {
-	return new(Pool)
-}
+// globally referenced pool object
+var pool = Pool{}
 
 // Submit submits a new task to the pool
 // tries to re-use existing goroutine if available else it spawns a new goroutine
-func (p *Pool) Submit(task func()) {
-	if s := p.pop(); s != nil {
+func Submit(task func()) {
+	if s := pop(); s != nil {
 		s.task = task           // assign task to existing worker goroutine
 		safe_ready(s.threadPtr) // start the goroutine
 	} else {
-		go p.loopQ(task) // spawn new worker goroutine
+		go loopQ(task) // spawn new worker goroutine
 	}
 }
 
 // loopQ is the looping function for every worker goroutine
-func (p *Pool) loopQ(task func()) {
+func loopQ(task func()) {
 	state := &node{threadPtr: GetG(), task: task}
 	for {
 		state.task()     // exec task
-		p.push(state)    // notify availability by pushing state reference into stack
+		push(state)      // notify availability by pushing state reference into stack
 		mcall(fast_park) // park and wait for call
 	}
 }
@@ -49,15 +47,15 @@ type node struct {
 }
 
 // pop pops value from the top of the stack
-func (p *Pool) pop() *node {
+func pop() *node {
 	var top, next *node
 	for {
-		top = p.top.Load()
+		top = pool.top.Load()
 		if top == nil {
 			return nil
 		}
 		next = top.next.Load()
-		if p.top.CompareAndSwap(top, next) {
+		if pool.top.CompareAndSwap(top, next) {
 			top.next.Store(nil)
 			return top
 		}
@@ -65,12 +63,12 @@ func (p *Pool) pop() *node {
 }
 
 // push pushes a value on top of the stack
-func (p *Pool) push(item *node) {
+func push(item *node) {
 	var top *node
 	for {
-		top = p.top.Load()
+		top = pool.top.Load()
 		item.next.Store(top)
-		if p.top.CompareAndSwap(top, item) {
+		if pool.top.CompareAndSwap(top, item) {
 			return
 		}
 	}

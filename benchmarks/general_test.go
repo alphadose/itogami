@@ -14,7 +14,6 @@ func demoFunc() {
 
 func BenchmarkGolangScheduler(b *testing.B) {
 	var wg sync.WaitGroup
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
@@ -26,25 +25,21 @@ func BenchmarkGolangScheduler(b *testing.B) {
 		}
 		wg.Wait()
 	}
-	b.StopTimer()
 }
 
 func BenchmarkItogamiScheduler(b *testing.B) {
 	var wg sync.WaitGroup
-	p := itogami.NewPool(PoolSize)
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		wg.Add(RunTimes)
 		for j := 0; j < RunTimes; j++ {
-			p.Submit(func() {
+			itogami.Submit(func() {
 				demoFunc()
 				wg.Done()
 			})
 		}
 		wg.Wait()
 	}
-	b.StopTimer()
 }
 
 // func BenchmarkErrGroup(b *testing.B) {

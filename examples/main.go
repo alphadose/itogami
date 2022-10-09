@@ -25,8 +25,6 @@ func demoFunc() {
 
 func examplePool() {
 	var wg sync.WaitGroup
-	// Use the common pool
-	pool := itogami.NewPool(10)
 
 	syncCalculateSum := func() {
 		demoFunc()
@@ -35,7 +33,7 @@ func examplePool() {
 	for i := uint32(0); i < runTimes; i++ {
 		wg.Add(1)
 		// Submit task to the pool
-		pool.Submit(syncCalculateSum)
+		itogami.Submit(syncCalculateSum)
 	}
 	wg.Wait()
 	println("finished all tasks")
