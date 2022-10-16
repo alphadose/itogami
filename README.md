@@ -1,10 +1,12 @@
 # Itogami
 
-> The best goroutine pool in terms of performance implemented using a lock-free stack
+> An experimental goroutine pool implemented using a lock-free stack
 
-By limiting concurrency with a fixed pool size and recycling goroutines, itogami saves a lot of memory as compared to using unlimited goroutines and also itogami is the fastest and has the least allocs/op among all existing goroutine pool implementations 
+By limiting concurrency with a fixed pool size and recycling goroutines using a stack, itogami saves a lot of memory as compared to using unlimited goroutines and remaining just as fast.
 
 Benchmarks to support the above claims [here](#benchmarks)
+
+**Note:- This work is experimental and should not be used in production**
 
 ## Installation
 
@@ -131,6 +133,5 @@ The following conclusions can be drawn from the above results:-
 2. [Itogami](https://github.com/alphadose/itogami) has the least `allocs/op` and hence the memory usage scales really well with high load
 3. The memory used per operation is in the acceptable range of other pools and drastically lower than unlimited goroutines
 4. The tolerance (± %) for [Itogami](https://github.com/alphadose/itogami) is quite low for all 3 metrics indicating that the algorithm is quite stable overall
-
 
 Benchmarking code available [here](https://github.com/alphadose/go-threadpool-benchmarks)
